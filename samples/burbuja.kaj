@@ -1,0 +1,36 @@
+.burbuja() [
+    @array .A = @new(5);
+
+    .A[0] = 5;
+    .A[1] = 1;
+    .A[2] = 4;
+    .A[3] = 2;
+    .A[4] = 3;
+
+    @let .i = 0;
+    @let .j = 0;
+    @let .temp = 0;
+
+    @while (.i < 5) [
+        .j = 0;
+        @while (.j < 4) [
+            @if (.A[.j] > .A[.j + 1]) [
+                .temp = .A[.j];
+                .A[.j] = .A[.j + 1];
+                .A[.j + 1] = .temp;
+            ]
+            .j += 1;
+        ]
+        .i += 1;
+    ]
+
+    .i = 0;
+    @while (.i < 5) [
+        @print(.A[.i]);
+        .i += 1;
+    ]
+]
+
+.main() [
+    .burbuja();
+]

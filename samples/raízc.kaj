@@ -1,0 +1,26 @@
+.abs(.x) [
+    @if (.x < 0.0) [
+        @return 0.0 - .x;
+    ]
+    @else [
+        @return .x;
+    ]
+]
+
+.raizc(.x) [
+    @let .r = .x;
+    @let .prev = 0.0;
+    @let .diff = 1.0;
+
+    @while (.diff > 0.0001) [
+        .prev = .r;
+        .r = (.r + .x / .r) / 2.0;
+        .diff = .abs(.r - .prev);
+    ]
+
+    @return .r;
+]
+
+.main() [
+    @print(.raizc(25.0));
+]

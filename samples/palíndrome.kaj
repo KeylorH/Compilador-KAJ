@@ -1,0 +1,27 @@
+.esPalindromo(.palabra, .longitud) [
+    @let .izquierda = 0;
+    @let .derecha = .longitud - 1;
+    @let .resultado = 1;
+
+    @while (.izquierda < .derecha) [
+        @if (.palabra[.izquierda] != .palabra[.derecha]) [
+            .resultado = 0;
+        ]
+
+        .izquierda += 1;
+        .derecha -= 1;
+    ]
+
+    @return .resultado;
+]
+
+.main() [
+    @let .palabra = "radar";
+
+    @if (.esPalindromo(.palabra, 5) == 1) [
+        @print(1);
+    ]
+    @else [
+        @print(0);
+    ]
+]
