@@ -1,51 +1,136 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/fRxdIGwW)
-# Proyecto
-IC-5701 Compiladores e intérpretes  
-Proyecto de implementación de un compilador
+# KAJ Compiler
 
-# Objetivo general
+Compilador desarrollado para el curso **IC-5701 Compiladores e Intérpretes** del Tecnológico de Costa Rica.
 
-Diseñar un lenguaje de programación con características mínimas para ser Turing-completo e implementar un compilador para este lenguaje.
+KAJ es un lenguaje de programación diseñado desde cero con el objetivo de explorar las principales etapas de construcción de un compilador: análisis léxico, análisis sintáctico, construcción de árboles de sintaxis abstracta, análisis semántico y generación de código.
 
-# Objetivos de aprendizaje
-* Diseñar y especificar un lenguaje de
-  programación (VI)
-* Realizar el análisis de los
-  componentes léxicos en expresiones
-  regulares para un lenguaje de
-  programación (IV)
-* Diseñar un algoritmo para escanear
-  los componentes léxicos de un
-  lenguaje de programación (VI)
-* Diseñar un árbol de sintaxis para un
-  lenguaje de programación (VI)
-* Construir un analizador sintáctico
-  para un lenguaje de programación
-  (VI)
-* Especificar reglas de chequeo de
-  tipos y resolución de identificadores
-  para un lenguaje de programación
-  (VI)
-* Construir un analizador semántico
-  para un lenguaje de programación
-  (VI)
-* Especificar las reglas de traducción
-  de un lenguaje fuente a un lenguaje
-* Construir un traductor de un
-  lenguaje fuente a un lenguaje
-  objetivo (VI)
+## Descripción del Proyecto
 
+Este proyecto implementa un compilador completo para el lenguaje **KAJ**, un lenguaje imperativo diseñado con características suficientes para ser computacionalmente expresivo y servir como plataforma de aprendizaje para conceptos fundamentales de compiladores.
 
-# Tareas
-1. Documentar especificación informal del lenguaje en `docs/01 ESPECIFICACION.md`. Utilizando su lenguaje de programación, agregar una implementación recursiva de pila de la función factorial en `samples/factorial`, y una implementación iterativa de ordenamiento burbuja en `samples/burbuja`. Si su lenguaje soporta hileras implementar una función palíndrome en `samples/palíndrome`. Si su lenguaje soporta números flotantes implementar la función de raíz cuadrada usando el método de Newton-Raphson en `samples/raízc`. El compilador deberá poder procesar estos archivos de ejemplo.
-2. Documentar diagrama de transiciones para el analizador léxico `docs/02 LEXICO.md`. Instalar el plugin de PlantUML en IntelliJ IDEA.
-3. Implementar un analizador léxico con base en el autómata definido en `docs/02 LEXICO.md` en el paquete `edu.ic5701.scanner`. El scanner debe reportar errores léxicos. Crear un `main` en la clase `edu.ic5701.Compiler` que invoque el scanner, reciba la ruta al archivo de código fuente en línea de comando e imprima en pantalla la lista de tokens reconocidos (incluyendo tipo, lexema y demás metadatos).
-4. Documentar la gramática del lenguaje en `docs/02 GRAMATICA.md`
-5. Implementar un parser de descenso recursivo para la gramática en `docs/02 GRAMATICA.md` en el paquete `edu.ic5701.parser`. Asumimos que ya hemos demostrado que la gramática es LL(1). El parser debe reportar errores sintácticos o reportar que el programa no presentó errores. Modificar `edu.ic5701.Compiler.main` para que ahora invoque al parser e indique si hubo errores léxicos o sintácticos, o si más bien el archivo fuente es válido. 
-6. Implementar las estructuras de datos del AST en el paquete `edu.ic5701.ast`.
-7. Modificar el parser para que retorne un AST correspondiente al código reconocido o reporte errores sintácticos. Modificar `edu.ic5701.Compiler.main` para que imprima en stdout el AST producido por el parser.
-8. Documentar la especificación semántica operativa del lenguaje en `docs/04 SEMANTICA.md`.
-9. Implementar un analizador semántico en el paquete `edu.ic5701.sem`, este debe reportar errores semánticos.
-10. Documentar las reglas de traducción del lenguaje fuente al lenguaje objetivo en `docs/05 TRADUCCIÓN.md`.
-11. Implementar un generador de código para el lenguaje siguiendo las reglas en `docs/05 TRADUCCIÓN.md` en el paquete `edu.ic5701.gen`. Modificar `edu.ic5701.Compiler.main` para que produzca un archivo de código ejecutable que tenga el mismo nombre que el archivo fuente recibido con extensión `.out`.
+El compilador recibe como entrada un programa escrito en KAJ y realiza las siguientes etapas:
 
+1. Análisis léxico (Scanner)
+2. Análisis sintáctico (Parser LL(1))
+3. Construcción del AST (Abstract Syntax Tree)
+4. Análisis semántico
+5. Generación de código ejecutable
+
+## Características Implementadas
+
+### Análisis Léxico
+
+* Reconocimiento de palabras reservadas.
+* Identificadores.
+* Literales numéricos.
+* Operadores aritméticos y lógicos.
+* Delimitadores y símbolos especiales.
+* Reporte de errores léxicos.
+
+### Análisis Sintáctico
+
+* Parser de descenso recursivo.
+* Gramática LL(1).
+* Detección y reporte de errores sintácticos.
+* Construcción automática del AST.
+
+### Análisis Semántico
+
+* Resolución de identificadores.
+* Verificación de tipos.
+* Validación de declaraciones.
+* Reporte de errores semánticos.
+
+### Generación de Código
+
+* Traducción del lenguaje fuente KAJ a lenguaje objetivo.
+* Producción automática de archivos ejecutables `.out`.
+
+## Arquitectura
+
+```text
+Código Fuente KAJ
+        │
+        ▼
+     Scanner
+        │
+        ▼
+      Parser
+        │
+        ▼
+       AST
+        │
+        ▼
+ Analizador Semántico
+        │
+        ▼
+ Generador de Código
+        │
+        ▼
+ Archivo Ejecutable
+```
+
+## Estructura del Proyecto
+
+```text
+src/
+├── edu.ic5701.scanner
+├── edu.ic5701.parser
+├── edu.ic5701.ast
+├── edu.ic5701.sem
+├── edu.ic5701.gen
+└── edu.ic5701.Compiler
+
+docs/
+├── 01 ESPECIFICACION.md
+├── 02 LEXICO.md
+├── 03 GRAMATICA.md
+├── 04 SEMANTICA.md
+└── 05 TRADUCCION.md
+
+samples/
+├── factorial
+├── burbuja
+├── palindromo
+└── raizc
+```
+
+## Programas de Ejemplo
+
+El compilador incluye varios programas de prueba desarrollados en KAJ:
+
+* Factorial recursivo utilizando pila de llamadas.
+* Ordenamiento Burbuja iterativo.
+* Verificación de palíndromos.
+* Cálculo de raíz cuadrada mediante Newton-Raphson.
+
+## Tecnologías Utilizadas
+
+* Java
+* Maven
+* IntelliJ IDEA
+* PlantUML
+
+## Resultados de Aprendizaje
+
+Durante el desarrollo de este proyecto se aplicaron conceptos de:
+
+* Diseño de lenguajes de programación.
+* Teoría de autómatas.
+* Expresiones regulares.
+* Parsing LL(1).
+* Árboles de sintaxis abstracta.
+* Análisis semántico.
+* Generación de código.
+* Construcción de compiladores.
+
+## Autor
+
+**Keylor Herrera Fuentes**
+
+Estudiante de Ingeniería en Computadores
+Tecnológico de Costa Rica (TEC)
+
+## Licencia
+
+Proyecto desarrollado con fines académicos para el curso IC-5701 Compiladores e Intérpretes.
