@@ -1,0 +1,103 @@
+@startuml
+title 7.1 Identificadores
+[*] --> q0
+q0 --> q1 : letra | _
+q1 --> q1 : letra | digito | _
+q1 --> [*] : otro / aceptar IDENTIFIER
+@enduml
+
+@startuml
+title 7.2 Numeros enteros y flotantes
+[*] --> q0
+q0 --> q1 : digito
+q1 --> q1 : digito
+q1 --> q2 : .
+q1 --> [*] : otro / aceptar entero
+q2 --> q3 : digito
+q3 --> q3 : digito
+q3 --> [*] : otro / aceptar flotante
+@enduml
+
+@startuml
+title 7.3 Hileras
+[*] --> q0
+q0 --> q1 : comilla doble
+q1 --> q1 : cualquier caracter excepto comilla
+q1 --> q2 : comilla doble
+q2 --> [*] : aceptar STRING
+@enduml
+
+@startuml
+title 7.4 Palabras reservadas con @
+[*] --> q0
+q0 --> q1 : @
+q1 --> q2 : letra
+q2 --> q2 : letra
+q2 --> [*] : otro / verificar reservada
+@enduml
+
+@startuml
+title 7.5 Asignacion, igualdad y aritmeticos
+[*] --> q0
+q0 --> q1 : =
+q0 --> q2 : +
+q0 --> q3 : -
+q0 --> q4 : *
+q0 --> q5 : /
+
+q1 --> [*] : = / aceptar EQ
+q1 --> [*] : otro / aceptar ASSIGN
+
+q2 --> [*] : = / aceptar PLUS_ASSIGN
+q2 --> [*] : otro / aceptar PLUS
+
+q3 --> [*] : = / aceptar MINUS_ASSIGN
+q3 --> [*] : otro / aceptar MINUS
+
+q4 --> [*] : = / aceptar MUL_ASSIGN
+q4 --> [*] : otro / aceptar STAR
+
+q5 --> [*] : = / aceptar DIV_ASSIGN
+q5 --> [*] : otro / aceptar SLASH
+@enduml
+
+@startuml
+title 7.6 Relacionales
+[*] --> q0
+q0 --> q1 : <
+q0 --> q2 : >
+q0 --> q3 : !
+
+q1 --> [*] : = / aceptar LE
+q1 --> [*] : otro / aceptar LT
+
+q2 --> [*] : = / aceptar GE
+q2 --> [*] : otro / aceptar GT
+
+q3 --> [*] : = / aceptar NE
+q3 --> [*] : otro / error
+@enduml
+
+@startuml
+title 7.7 Operadores logicos
+[*] --> q0
+q0 --> q1 : &
+q0 --> q2 : |
+
+q1 --> [*] : & / aceptar AND
+q1 --> [*] : otro / error
+
+q2 --> [*] : | / aceptar OR
+q2 --> [*] : otro / error
+@enduml
+
+@startuml
+title 7.8 Delimitadores
+[*] --> q0
+q0 --> [*] : ( / aceptar LPAREN
+q0 --> [*] : ) / aceptar RPAREN
+q0 --> [*] : [ / aceptar LBRACKET
+q0 --> [*] : ] / aceptar RBRACKET
+q0 --> [*] : , / aceptar COMMA
+q0 --> [*] : ; / aceptar SEMICOLON
+@enduml
