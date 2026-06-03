@@ -1,0 +1,26 @@
+.def factorial: args=1, locals=0
+	iconst 1
+	load 0 ; n
+	ilt
+	iconst 0
+	ieq
+	jmpf else_1
+	iconst 1
+	ret
+	jmp end_2
+else_1:
+	load 0 ; n
+	load 0 ; n
+	iconst 1
+	isub
+	call factorial()
+	imul
+	ret
+end_2:
+	ret
+
+.def main: args=0, locals=0
+	iconst 7
+	call factorial()
+	print
+	halt
