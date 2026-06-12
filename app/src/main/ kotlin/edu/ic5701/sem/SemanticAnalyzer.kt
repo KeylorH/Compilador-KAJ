@@ -16,7 +16,7 @@ class SemanticAnalyzer : AstVisitor<KajType?> {
     override fun visit(program: Program): KajType? {
         program.functions.forEach { function ->
             val ok = symbols.define(
-                Symbol(function.name.lexeme, null, SymbolCategory.FUNC, function)
+                Symbol(function.name.lexeme, KajType.INT, SymbolCategory.FUNC, function)
             )
 
             if (!ok) {
@@ -35,13 +35,17 @@ class SemanticAnalyzer : AstVisitor<KajType?> {
     override fun visit(funcDecl: FuncDecl): KajType? {
         currentReturnTypes = mutableListOf()
 
+
         symbols.newScope()
 
         funcDecl.params.forEach { it.accept(this) }
         funcDecl.body.accept(this)
 
         val returnType = currentReturnTypes.firstOrNull { it != null }
-        symbols.resolve(funcDecl.name.lexeme)?.type = returnType
+
+        if (returnType != null) {
+            symbols.resolve(funcDecl.name.lexeme)?.type = returnType
+        }
 
         symbols.popScope()
         return null
@@ -200,10 +204,17 @@ class SemanticAnalyzer : AstVisitor<KajType?> {
         }
 
         identExpr.type = symbol.type
+
         return identExpr.type
     }
 
     override fun visit(callExpr: CallExpr): KajType? {
+        if (isStringLengthCall(callExpr)) {
+            validateStringLengthCall(callExpr)
+            callExpr.type = KajType.INT
+            return callExpr.type
+        }
+
         val symbol = symbols.resolve(callExpr.callee.lexeme)
 
         if (symbol == null) {
@@ -223,7 +234,7 @@ class SemanticAnalyzer : AstVisitor<KajType?> {
 
         callExpr.args.forEach { it.accept(this) }
 
-        callExpr.type = symbol?.type
+        callExpr.type = symbol?.type ?: KajType.INT
         return callExpr.type
     }
 
@@ -231,18 +242,35 @@ class SemanticAnalyzer : AstVisitor<KajType?> {
         val symbol = symbols.resolve(arrayAccessExpr.name.lexeme)
 
         if (symbol == null) {
-            semanticError(arrayAccessExpr.name, "Arreglo '${arrayAccessExpr.name.lexeme}' no declarado.")
-        } else if (symbol.category != SymbolCategory.ARRAY) {
-            semanticError(arrayAccessExpr.name, "'${arrayAccessExpr.name.lexeme}' no es un arreglo.")
+            semanticError(
+                arrayAccessExpr.name,
+                "Arreglo '${arrayAccessExpr.name.lexeme}' no declarado."
+            )
+        } else if (
+            symbol.category != SymbolCategory.ARRAY &&
+            symbol.category != SymbolCategory.PARAM
+        ) {
+            semanticError(
+                arrayAccessExpr.name,
+                "'${arrayAccessExpr.name.lexeme}' no es un arreglo."
+            )
         }
 
         val indexType = arrayAccessExpr.index.accept(this)
 
         if (indexType != null && indexType != KajType.INT) {
-            semanticError(arrayAccessExpr.name, "El indice del arreglo debe ser int.")
+            semanticError(
+                arrayAccessExpr.name,
+                "El indice del arreglo debe ser int."
+            )
         }
 
-        arrayAccessExpr.type = KajType.INT
+        if (symbol?.category == SymbolCategory.ARRAY) {
+            arrayAccessExpr.type = KajType.INT
+        } else if (symbol?.category == SymbolCategory.PARAM) {
+            arrayAccessExpr.type = KajType.INT
+        }
+
         return arrayAccessExpr.type
     }
 
@@ -327,6 +355,27 @@ class SemanticAnalyzer : AstVisitor<KajType?> {
 
     private fun isNumeric(type: KajType?): Boolean {
         return type == KajType.INT || type == KajType.FLOAT
+    }
+
+    private fun validateStringLengthCall(callExpr: CallExpr) {
+        if (callExpr.args.size != 1) {
+            semanticError(
+                callExpr.callee,
+                "La funcion '${callExpr.callee.lexeme}' espera 1 argumentos, pero recibio ${callExpr.args.size}."
+            )
+        }
+
+        callExpr.args.forEachIndexed { index, arg ->
+            val argType = arg.accept(this)
+
+            if (index == 0 && argType != null && argType != KajType.STRING) {
+                semanticError(callExpr.callee, "La funcion '${callExpr.callee.lexeme}' espera un argumento string.")
+            }
+        }
+    }
+
+    private fun isStringLengthCall(callExpr: CallExpr): Boolean {
+        return callExpr.callee.lexeme.removePrefix(".") == "slen"
     }
 
     private fun semanticError(token: Token, message: String) {
