@@ -1,26 +1,148 @@
-.def factorial: args=1, locals=0
-	iconst 1
-	load 0 ; n
-	ilt
+; Runtime de division para StackVM
+
+
+.def idiv: args=2, locals=2
+    ; locals:
+    ; 0: dividendo
+    ; 1: divisor
+    ; 2: cociente
+    ; 3: residuo
+
+    iconst 0
+    store 2
+
+    load 0
+    store 3
+
+idiv_loop:
+    load 3
+    load 1
+    ilt
+    jmpt idiv_end
+
+    load 3
+    load 1
+    isub
+    store 3
+
+    load 2
+    iconst 1
+    iadd
+    store 2
+
+    jmp idiv_loop
+
+idiv_end:
+    load 2
+    ret
+
+.def fdiv: args=2, locals=2
+    ; locals:
+    ; 0: dividendo
+    ; 1: divisor
+    ; 2: aproximacion
+    ; 3: contador
+
+    ; divisor < 1.0 ?
+    load 1
+    fconst 1.0
+    flt
+    jmpt fdiv_init_one
+
+    ; divisor == 1.0 ?
+    load 1
+    fconst 1.0
+    feq
+    jmpt fdiv_init_one
+
+    ; divisor > 1.0
+    fconst 0.01
+    store 2
+    jmp fdiv_init_done
+
+fdiv_init_one:
+    fconst 1.0
+    store 2
+
+fdiv_init_done:
+    iconst 0
+    store 3
+
+fdiv_loop:
+    load 3
+    iconst 20
+    ilt
+    jmpf fdiv_end
+
+    ; x = x * (2.0 - divisor * x)
+
+    load 2
+    fconst 2.0
+    load 1
+    load 2
+    fmul
+    fsub
+    fmul
+    store 2
+
+    load 3
+    iconst 1
+    iadd
+    store 3
+
+    jmp fdiv_loop
+
+fdiv_end:
+    load 0
+    load 2
+    fmul
+    ret
+
+.def esPalindromo: args=2, locals=2
 	iconst 0
-	ieq
-	jmpf else_1
-	iconst 1
-	ret
-	jmp end_2
-else_1:
-	load 0 ; n
-	load 0 ; n
+	store 2 ; izquierda
+	load 1 ; longitud
 	iconst 1
 	isub
-	call factorial()
-	imul
+	store 3 ; derecha
+while_1:
+	load 2 ; izquierda
+	load 3 ; derecha
+	ilt
+	jmpf endwhile_2
+	load 0
+	load 2 ; izquierda
+	sget
+	ctoi
+	load 0
+	load 3 ; derecha
+	sget
+	ctoi
+	ieq
+	iconst 0
+	ieq
+	jmpf else_3
+	iconst 0
 	ret
-end_2:
+else_3:
+	load 2 ; izquierda
+	iconst 1
+	iadd
+	store 2 ; izquierda
+	load 3 ; derecha
+	iconst 1
+	isub
+	store 3 ; derecha
+	jmp while_1
+endwhile_2:
+	iconst 1
 	ret
 
-.def main: args=0, locals=0
-	iconst 7
-	call factorial()
+.def main: args=0, locals=1
+	sconst "anitalavalatina"
+	store 0 ; palabra
+	load 0 ; palabra
+	iconst 15
+	call esPalindromo()
 	print
 	halt
