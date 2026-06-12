@@ -1,0 +1,99 @@
+; Runtime de division para StackVM
+
+
+.def idiv: args=2, locals=2
+    ; locals:
+    ; 0: dividendo
+    ; 1: divisor
+    ; 2: cociente
+    ; 3: residuo
+
+    iconst 0
+    store 2
+
+    load 0
+    store 3
+
+idiv_loop:
+    load 3
+    load 1
+    ilt
+    jmpt idiv_end
+
+    load 3
+    load 1
+    isub
+    store 3
+
+    load 2
+    iconst 1
+    iadd
+    store 2
+
+    jmp idiv_loop
+
+idiv_end:
+    load 2
+    ret
+
+.def fdiv: args=2, locals=2
+    ; locals:
+    ; 0: dividendo
+    ; 1: divisor
+    ; 2: aproximacion
+    ; 3: contador
+
+    ; divisor < 1.0 ?
+    load 1
+    fconst 1.0
+    flt
+    jmpt fdiv_init_one
+
+    ; divisor == 1.0 ?
+    load 1
+    fconst 1.0
+    feq
+    jmpt fdiv_init_one
+
+    ; divisor > 1.0
+    fconst 0.01
+    store 2
+    jmp fdiv_init_done
+
+fdiv_init_one:
+    fconst 1.0
+    store 2
+
+fdiv_init_done:
+    iconst 0
+    store 3
+
+fdiv_loop:
+    load 3
+    iconst 20
+    ilt
+    jmpf fdiv_end
+
+    ; x = x * (2.0 - divisor * x)
+
+    load 2
+    fconst 2.0
+    load 1
+    load 2
+    fmul
+    fsub
+    fmul
+    store 2
+
+    load 3
+    iconst 1
+    iadd
+    store 3
+
+    jmp fdiv_loop
+
+fdiv_end:
+    load 0
+    load 2
+    fmul
+    ret
