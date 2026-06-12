@@ -17,6 +17,8 @@ class CodeGenerator : AstVisitor<Unit> {
         nextSlot = 0
         currentFunctionName = ""
 
+        emitRuntimePrelude()
+
         program.accept(this)
 
         return instructions.joinToString(System.lineSeparator()) + System.lineSeparator()
@@ -209,13 +211,21 @@ class CodeGenerator : AstVisitor<Unit> {
     override fun visit(arrayAccessExpr: ArrayAccessExpr) {
         val slot = resolveSlot(arrayAccessExpr.name.lexeme)
 
+        if (arrayAccessExpr.name.lexeme == ".palabra") {
+            emitInstruction("load $slot")
+            arrayAccessExpr.index.accept(this)
+            emitInstruction("sget")
+            emitInstruction("ctoi")
+            return
+        }
+
         arrayAccessExpr.index.accept(this)
 
         when (arrayAccessExpr.type) {
-            KajType.FLOAT -> emitInstruction("hfload $slot ; ${cleanName(arrayAccessExpr.name.lexeme)}")
-            KajType.CHAR -> emitInstruction("hcload $slot ; ${cleanName(arrayAccessExpr.name.lexeme)}")
-            KajType.STRING -> emitInstruction("hsload $slot ; ${cleanName(arrayAccessExpr.name.lexeme)}")
-            else -> emitInstruction("hiload $slot ; ${cleanName(arrayAccessExpr.name.lexeme)}")
+            KajType.FLOAT -> emitInstruction("hfload $slot")
+            KajType.CHAR -> emitInstruction("hcload $slot")
+            KajType.STRING -> emitInstruction("hsload $slot")
+            else -> emitInstruction("hiload $slot")
         }
     }
 
@@ -224,13 +234,13 @@ class CodeGenerator : AstVisitor<Unit> {
             BinaryOp.GT -> {
                 binaryExpr.right.accept(this)
                 binaryExpr.left.accept(this)
-                emitInstruction(lessThanInstruction(binaryExpr.left.type))
+                emitInstruction(lessThanInstruction(operationType(binaryExpr)))
             }
 
             BinaryOp.LE -> {
                 binaryExpr.right.accept(this)
                 binaryExpr.left.accept(this)
-                emitInstruction(lessThanInstruction(binaryExpr.left.type))
+                emitInstruction(lessThanInstruction(operationType(binaryExpr)))
                 emitInstruction("iconst 0")
                 emitInstruction("ieq")
             }
@@ -238,7 +248,7 @@ class CodeGenerator : AstVisitor<Unit> {
             BinaryOp.GE -> {
                 binaryExpr.left.accept(this)
                 binaryExpr.right.accept(this)
-                emitInstruction(lessThanInstruction(binaryExpr.left.type))
+                emitInstruction(lessThanInstruction(operationType(binaryExpr)))
                 emitInstruction("iconst 0")
                 emitInstruction("ieq")
             }
@@ -246,7 +256,7 @@ class CodeGenerator : AstVisitor<Unit> {
             BinaryOp.NE -> {
                 binaryExpr.left.accept(this)
                 binaryExpr.right.accept(this)
-                emitInstruction(equalsInstruction(binaryExpr.left.type))
+                emitInstruction(equalsInstruction(operationType(binaryExpr)))
                 emitInstruction("iconst 0")
                 emitInstruction("ieq")
             }
@@ -271,13 +281,15 @@ class CodeGenerator : AstVisitor<Unit> {
                 binaryExpr.left.accept(this)
                 binaryExpr.right.accept(this)
 
+                val type = operationType(binaryExpr)
+
                 val instruction = when (binaryExpr.op) {
-                    BinaryOp.ADD -> plusInstruction(binaryExpr.left.type)
-                    BinaryOp.SUB -> minusInstruction(binaryExpr.left.type)
-                    BinaryOp.MUL -> multiplyInstruction(binaryExpr.left.type)
-                    BinaryOp.DIV -> divideInstruction(binaryExpr.left.type)
-                    BinaryOp.LT -> lessThanInstruction(binaryExpr.left.type)
-                    BinaryOp.EQ -> equalsInstruction(binaryExpr.left.type)
+                    BinaryOp.ADD -> plusInstruction(type)
+                    BinaryOp.SUB -> minusInstruction(type)
+                    BinaryOp.MUL -> multiplyInstruction(type)
+                    BinaryOp.DIV -> divideInstruction(type)
+                    BinaryOp.LT -> lessThanInstruction(type)
+                    BinaryOp.EQ -> equalsInstruction(type)
                     else -> error("Operador binario no soportado: ${binaryExpr.op}")
                 }
 
@@ -295,9 +307,11 @@ class CodeGenerator : AstVisitor<Unit> {
             }
 
             UnaryOp.NEG -> {
-                emitInstruction(if (unaryExpr.expr.type == KajType.FLOAT) "fconst 0.0" else "iconst 0")
+                val type = numericTypeOf(unaryExpr.expr)
+
+                emitInstruction(if (type == KajType.FLOAT) "fconst 0.0" else "iconst 0")
                 unaryExpr.expr.accept(this)
-                emitInstruction(if (unaryExpr.expr.type == KajType.FLOAT) "fsub" else "isub")
+                emitInstruction(if (type == KajType.FLOAT) "fsub" else "isub")
             }
         }
     }
@@ -334,6 +348,44 @@ class CodeGenerator : AstVisitor<Unit> {
         return block.statements.lastOrNull() is ReturnStmt
     }
 
+    private fun operationType(binaryExpr: BinaryExpr): KajType {
+
+        return when {
+            binaryExpr.type == KajType.FLOAT -> KajType.FLOAT
+            binaryExpr.left.type == KajType.FLOAT -> KajType.FLOAT
+            binaryExpr.right.type == KajType.FLOAT -> KajType.FLOAT
+            numericTypeOf(binaryExpr.left) == KajType.FLOAT -> KajType.FLOAT
+            numericTypeOf(binaryExpr.right) == KajType.FLOAT -> KajType.FLOAT
+            binaryExpr.type == KajType.INT && binaryExpr.left.type == KajType.INT && binaryExpr.right.type == KajType.INT -> KajType.INT
+            binaryExpr.left.type == KajType.INT && binaryExpr.right.type == KajType.INT -> KajType.INT
+            else -> KajType.INT
+        }
+    }
+
+    private fun numericTypeOf(expr: Expr): KajType? {
+        return when (expr) {
+            is NumberExpr -> {
+                if (expr.value.lexeme.contains(".")) {
+                    KajType.FLOAT
+                } else {
+                    KajType.INT
+                }
+            }
+
+            is BinaryExpr -> operationType(expr)
+
+            is UnaryExpr -> numericTypeOf(expr.expr)
+
+            is CallExpr -> expr.type
+
+            is ArrayAccessExpr -> expr.type
+
+            is IdentExpr -> expr.type
+
+            else -> expr.type
+        }
+    }
+
     private fun plusInstruction(type: KajType?): String {
         return if (type == KajType.FLOAT) "fadd" else "iadd"
     }
@@ -347,7 +399,7 @@ class CodeGenerator : AstVisitor<Unit> {
     }
 
     private fun divideInstruction(type: KajType?): String {
-        return if (type == KajType.FLOAT) "fdiv" else "idiv"
+        return if (type == KajType.FLOAT) "call fdiv()" else "call idiv()"
     }
 
     private fun lessThanInstruction(type: KajType?): String {
@@ -360,16 +412,20 @@ class CodeGenerator : AstVisitor<Unit> {
 
     private fun arithmeticInstruction(op: AssignOp, type: KajType?): String {
         return when (op) {
-            AssignOp.PLUS_ASSIGN -> plusInstruction(type)
-            AssignOp.MINUS_ASSIGN -> minusInstruction(type)
-            AssignOp.MUL_ASSIGN -> multiplyInstruction(type)
-            AssignOp.DIV_ASSIGN -> divideInstruction(type)
+            AssignOp.PLUS_ASSIGN -> plusInstruction(type ?: KajType.FLOAT)
+            AssignOp.MINUS_ASSIGN -> minusInstruction(type ?: KajType.FLOAT)
+            AssignOp.MUL_ASSIGN -> multiplyInstruction(type ?: KajType.FLOAT)
+            AssignOp.DIV_ASSIGN -> divideInstruction(type ?: KajType.FLOAT)
             AssignOp.ASSIGN -> error("El operador '=' no tiene instruccion aritmetica asociada.")
         }
     }
 
     private fun functionName(name: String): String {
         return name.removePrefix(".")
+    }
+
+    private fun isStringLengthCall(callExpr: CallExpr): Boolean {
+        return functionName(callExpr.callee.lexeme) == "slen"
     }
 
     private fun cleanName(name: String): String {
@@ -383,6 +439,20 @@ class CodeGenerator : AstVisitor<Unit> {
     private fun newLabel(prefix: String): String {
         labelCounter++
         return "${prefix}_$labelCounter"
+    }
+
+    private fun emitRuntimePrelude() {
+        val runtime = javaClass.classLoader
+            .getResourceAsStream("stackvm_division.txt")
+            ?.bufferedReader()
+            ?.readText()
+            ?: error("No se encontro el recurso stackvm_division.txt")
+
+        instructions.addAll(runtime.lines())
+
+        if (instructions.lastOrNull()?.isNotBlank() == true) {
+            emit("")
+        }
     }
 
     private fun emit(line: String) {
