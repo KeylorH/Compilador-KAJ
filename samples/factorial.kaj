@@ -8,5 +8,5 @@
 ]
 
 .main() [
-    @print(.factorial(7));
+    @print(.factorial(5));
 ]

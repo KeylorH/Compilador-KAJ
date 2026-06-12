@@ -8,7 +8,7 @@
 ]
 
 .raizc(.x) [
-    @let .r = .x;
+    @let .r = .x + 0.0;
     @let .prev = 0.0;
     @let .diff = 1.0;
 
@@ -22,5 +22,5 @@
 ]
 
 .main() [
-    @print(.raizc(25.0));
+    @print(.raizc(169.0));
 ]
